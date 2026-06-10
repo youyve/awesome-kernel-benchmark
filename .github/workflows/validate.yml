@@ -1,0 +1,27 @@
+name: validate
+
+on:
+  push:
+    paths: ["data/**", "scripts/**", ".github/workflows/validate.yml"]
+  pull_request:
+    paths: ["data/**", "scripts/**"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Validate data/benchmarks.yaml against the schema
+        run: python3 scripts/generate.py --check
+      - name: Check README.md / benchmarks.json are regenerated
+        run: |
+          python3 scripts/generate.py
+          if ! git diff --quiet -- README.md data/benchmarks.json; then
+            echo "::error::README.md or data/benchmarks.json is stale — run 'python3 scripts/generate.py' and commit the result."
+            git diff --stat -- README.md data/benchmarks.json
+            exit 1
+          fi
