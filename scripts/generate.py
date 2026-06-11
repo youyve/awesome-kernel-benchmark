@@ -24,27 +24,30 @@ except ImportError:
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data", "benchmarks.yaml")
+SCORECARD_DATA = os.path.join(ROOT, "data", "scorecard.yaml")
 JSON_OUT = os.path.join(ROOT, "data", "benchmarks.json")
-README = os.path.join(ROOT, "README.md")
+READMES = [os.path.join(ROOT, "README.md"), os.path.join(ROOT, "README.zh.md")]
 
 # ---------------------------------------------------------------- vocabularies
 LAYERS = ["agent-benchmark", "substrate-suite", "dataset", "tooling"]
 
-# Layer-2 families in display order: (id, heading, blurb, matrix-code)
+# Layer-2 families in display order (ordered by relevance to kernel agents,
+# most-reached-for first): (id, plain-language heading, "use this for" blurb,
+# matrix-code). IDs are stable; only the display layer is plain-language.
 FAMILIES = [
-    ("polyhedral",              "Polyhedral & loop-nest suites",            "Affine loop nests (PolyBench lineage); clean reference outputs make correctness trivial to check.", "POLY"),
-    ("hpc-mini-app",            "HPC proxy & mini-apps",                    "DOE/NASA mini-apps: small, science-representative, almost all ship a verification figure-of-merit.", "HPC"),
-    ("classic-gpu-suite",       "Classic GPU / heterogeneous suites",       "The pre-DL GPU canon (Berkeley-dwarf coverage) plus multi-language supersets (HeCBench, SYCL-Bench).", "GPU"),
-    ("graph-suite",             "Graph-analytics suites",                   "Irregular / amorphous-data-parallel kernels with strong optimized baselines.", "GRAPH"),
-    ("dl-micro",                "DL operator micro-benchmarks & vendor baselines", "The 'reference kernel you must beat' — cuDNN/cuBLAS, Triton tutorials, FlashAttention, etc.", "DLOP"),
-    ("tensor-compiler",         "Tensor-compiler & autotuning substrates",  "Search / learned-cost-model substrates and the autoscheduled baselines agents are compared against.", "TC"),
-    ("sparse-la",               "Sparse linear algebra & tensors",          "Sparse matrices/tensors and the SpMV/SpMM/SDDMM kernels over them.", "SPARSE"),
-    ("stencil-spectral",        "Stencil, spectral & PDE",                  "Structured-grid stencils, FFT/spectral, and the DSLs/compilers that target them.", "STEN"),
-    ("numerical-microbenchmark","Numerical & roofline microbenchmarks",     "FLOPS / bandwidth / roofline probes that calibrate the hardware ceilings agents reason about.", "NUM"),
-    ("compiler-test-suite",     "Compiler, HLS & language test suites",     "Codegen substrates: LLVM test-suite, SPEC ACCEL/OMP, and HLS benchmark suites.", "COMP"),
-    ("dl-system",               "DL system & end-to-end benchmarks",        "Model-level / framework-level suites that bound end-to-end targets.", "DLSYS"),
-    ("serving-inference",       "LLM serving & inference benchmarks",       "Serving harnesses defining the TTFT/TPOT/throughput metrics that attention/MoE kernels move.", "SERV"),
-    ("emerging-accelerator",    "Emerging & domestic accelerators",         "NPU / IPU / Tenstorrent / Cambricon / Moore Threads / RISC-V substrates and their agents.", "ACCEL"),
+    ("dl-micro",                "DL operators & vendor baselines",          "The kernels your agent must beat: cuDNN/cuBLAS, FlashAttention, Triton tutorials, Liger. Use as reference implementations and speedup denominators.", "DLOP"),
+    ("tensor-compiler",         "Tensor compilers & autotuners",            "Machine-generated baselines (TVM/Ansor, Hidet, CUTLASS profiler). Use when you want your agent compared against autotuned — not just eager — code.", "TC"),
+    ("serving-inference",       "LLM serving benchmarks",                   "Where kernel wins become end-to-end wins: TTFT/TPOT/throughput harnesses (vLLM, SGLang). Use to show a kernel matters at the serving level.", "SERV"),
+    ("dl-system",               "Whole-model DL benchmarks",                "Model-level suites (MLPerf, TorchBench, TorchInductor). Use to bound end-to-end impact of kernel-level changes.", "DLSYS"),
+    ("sparse-la",               "Sparse linear algebra",                    "SpMV/SpMM/SDDMM kernels and the matrix collections (SuiteSparse, DLMC) they run on. Irregular memory patterns — a hard, under-benchmarked motif.", "SPARSE"),
+    ("stencil-spectral",        "Stencils, FFT & PDE",                      "Structured-grid stencils, FFT/spectral kernels, and their DSLs (Halide, Devito). Classic memory-bound optimization targets with clean verification.", "STEN"),
+    ("graph-suite",             "Graph analytics (irregular)",              "BFS/PageRank/connected-components with strong optimized baselines (Gunrock, GAPBS). Use to test agents beyond dense regular loops.", "GRAPH"),
+    ("polyhedral",              "Dense loop nests (PolyBench lineage)",     "Regular affine loop kernels (GEMM-like, stencils) with trivially checkable outputs — the easiest substrate to verify, and the most-used in agent papers.", "POLY"),
+    ("hpc-mini-app",            "HPC proxy & mini-apps",                    "DOE/NASA mini-apps (NPB, XSBench, LULESH): small, science-representative, almost all ship a built-in verification figure-of-merit.", "HPC"),
+    ("classic-gpu-suite",       "Classic GPU suites (pre-DL canon)",        "Rodinia, SHOC, Parboil, HeCBench: the broad-coverage GPU canon. HeCBench alone gives one kernel in 4+ programming models.", "GPU"),
+    ("numerical-microbenchmark","Peak & roofline probes",                   "STREAM, ERT, mixbench, gpu-burn: measure what the hardware can actually do. The calibration layer any ceiling-relative metric depends on.", "NUM"),
+    ("compiler-test-suite",     "Compiler & HLS test suites",               "LLVM test-suite, SPEC ACCEL/OMP, MachSuite: codegen substrates with strict correctness baked in.", "COMP"),
+    ("emerging-accelerator",    "NPU & emerging accelerators",              "Ascend, Cambricon, Tenstorrent, IPU substrates — where vendor-kernel scarcity makes agents most valuable and baselines weakest.", "ACCEL"),
 ]
 FAMILY_IDS = [f[0] for f in FAMILIES]
 FAMILY_CODE = {f[0]: f[3] for f in FAMILIES}
@@ -74,6 +77,10 @@ REQUIRED = ["id", "name", "year", "org", "layer", "abstraction", "family",
 VERIFY_BADGE = {"yes": "✅", "partial": "◐", "no": "—"}
 SHIPS_BADGE = {"yes": "✅", "partial": "◐", "no": "—"}
 
+SCORE_GRADES = {"strong": "●", "partial": "◐", "weak": "○", "none": "—", "unknown": "?"}
+SCORE_FIELDS = ["oracle", "timing", "budget"]   # graded enums; baseline/use_when are text
+
+
 # --------------------------------------------------------------------- loading
 def load():
     with open(DATA, encoding="utf-8") as fh:
@@ -85,6 +92,29 @@ def load():
             if isinstance(e.get(f), bool):
                 e[f] = "yes" if e[f] else "no"
     return entries
+
+
+def load_scorecard():
+    if not os.path.exists(SCORECARD_DATA):
+        return {}
+    with open(SCORECARD_DATA, encoding="utf-8") as fh:
+        return yaml.safe_load(fh).get("scorecard", {}) or {}
+
+
+def validate_scorecard(entries, scorecard):
+    errors = []
+    ids = {e["id"] for e in entries if e["layer"] == "agent-benchmark"}
+    for sid, row in scorecard.items():
+        if sid not in ids:
+            errors.append(f"scorecard: '{sid}' is not a Layer-1 benchmark id")
+            continue
+        for f in SCORE_FIELDS:
+            if row.get(f) not in SCORE_GRADES:
+                errors.append(f"scorecard {sid}: bad {f} grade '{row.get(f)}'")
+        for f in ("baseline", "use_when", "evidence"):
+            if not row.get(f):
+                errors.append(f"scorecard {sid}: missing '{f}'")
+    return errors
 
 
 def validate(entries):
@@ -167,6 +197,36 @@ def render_layer1(entries):
     return "\n".join(out)
 
 
+def render_scorecard(entries, scorecard):
+    """Methodology scorecard: HOW each Layer-1 benchmark measures, graded only
+    where primary evidence (harness code / paper) was actually read."""
+    l1 = {e["id"]: e for e in entries if e["layer"] == "agent-benchmark"}
+    graded = [(sid, row) for sid, row in scorecard.items() if sid in l1]
+    graded.sort(key=lambda kv: (l1[kv[0]].get("year", ""), l1[kv[0]]["name"]))
+
+    out = ["| Benchmark | Year | Hardware | Oracle | Timing | Baseline | Budget | Pick this if… |",
+           "|:---|:---:|:---|:---:|:---:|:---|:---:|:---|"]
+    for sid, row in graded:
+        e = l1[sid]
+        out.append("| {nm} | {yr} | {hw} | {o} | {t} | {bl} | {bu} | {uw} |".format(
+            nm=f"[{e['name']}]({row['evidence']})", yr=e.get("year", ""),
+            hw=joinlist(e.get("hardware", [])),
+            o=SCORE_GRADES[row["oracle"]], t=SCORE_GRADES[row["timing"]],
+            bl=row["baseline"], bu=SCORE_GRADES[row["budget"]],
+            uw=row["use_when"]))
+
+    ungraded = sorted((e for sid, e in l1.items() if sid not in scorecard),
+                      key=lambda e: (e.get("year", ""), e["name"]))
+    legend = ("**Grades** (criteria in [`data/scorecard.yaml`](data/scorecard.yaml) / "
+              "[`SCHEMA.md`](SCHEMA.md)): ● strong · ◐ partial · ○ weak · — none · ? unverified. "
+              "Grades are assigned ONLY from primary evidence (harness source / paper) — "
+              "no benchmark is graded from its README claims.")
+    not_yet = ("**Not yet graded** (" + str(len(ungraded)) + "): " +
+               ", ".join(link(e) for e in ungraded) +
+               ". PRs grading these against the criteria are the most valuable contribution this list can receive.")
+    return "\n".join(out) + "\n\n" + legend + "\n\n" + not_yet
+
+
 def render_layer2(entries):
     blocks = []
     for fam, heading, blurb, _code in FAMILIES:
@@ -227,18 +287,19 @@ def render_agentmap(entries):
 
 
 SECTIONS = {
-    "STATS": render_stats,
-    "LAYER1": render_layer1,
-    "LAYER2": render_layer2,
-    "MATRIX": render_matrix,
-    "AGENTMAP": render_agentmap,
+    "STATS": lambda en, sc: render_stats(en),
+    "SCORECARD": lambda en, sc: render_scorecard(en, sc),
+    "LAYER1": lambda en, sc: render_layer1(en),
+    "LAYER2": lambda en, sc: render_layer2(en),
+    "MATRIX": lambda en, sc: render_matrix(en),
+    "AGENTMAP": lambda en, sc: render_agentmap(en),
 }
 
 
 def inject(readme_text, key, content):
     begin, end = f"<!-- BEGIN:{key} -->", f"<!-- END:{key} -->"
     if begin not in readme_text or end not in readme_text:
-        raise SystemExit(f"README is missing markers for {key}")
+        return readme_text  # a README variant may omit some sections
     pre = readme_text.split(begin)[0]
     post = readme_text.split(end, 1)[1]
     note = "<!-- generated by scripts/generate.py — do not edit by hand -->"
@@ -251,29 +312,37 @@ def main():
     args = ap.parse_args()
 
     entries = load()
+    scorecard = load_scorecard()
     errors, warnings = validate(entries)
+    errors += validate_scorecard(entries, scorecard)
     for w in warnings:
         print(f"  warning: {w}", file=sys.stderr)
     if errors:
         for e in errors:
             print(f"  ERROR: {e}", file=sys.stderr)
         sys.exit(f"{len(errors)} validation error(s)")
-    print(f"validated {len(entries)} entries ({len(warnings)} warning(s))")
+    print(f"validated {len(entries)} entries, {len(scorecard)} scorecard rows "
+          f"({len(warnings)} warning(s))")
 
     if args.check:
         return
 
     with open(JSON_OUT, "w", encoding="utf-8") as fh:
-        json.dump(entries, fh, indent=2, ensure_ascii=False)
+        json.dump({"benchmarks": entries, "scorecard": scorecard}, fh,
+                  indent=2, ensure_ascii=False)
         fh.write("\n")
 
-    with open(README, encoding="utf-8") as fh:
-        txt = fh.read()
-    for key, fn in SECTIONS.items():
-        txt = inject(txt, key, fn(entries))
-    with open(README, "w", encoding="utf-8") as fh:
-        fh.write(txt)
-    print(f"wrote README.md and data/benchmarks.json")
+    for readme in READMES:
+        if not os.path.exists(readme):
+            continue
+        with open(readme, encoding="utf-8") as fh:
+            txt = fh.read()
+        for key, fn in SECTIONS.items():
+            txt = inject(txt, key, fn(entries, scorecard))
+        with open(readme, "w", encoding="utf-8") as fh:
+            fh.write(txt)
+        print(f"wrote {os.path.basename(readme)}")
+    print("wrote data/benchmarks.json")
 
 
 if __name__ == "__main__":

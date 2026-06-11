@@ -1,0 +1,111 @@
+# Methodology scorecard for Layer-1 (purpose-built) agent benchmarks.
+# Keyed by the entry `id` in benchmarks.yaml. ONLY benchmarks whose harness
+# code/paper was actually read get a row here — everything else renders as
+# "not yet graded". PRs welcome: grade a benchmark by citing primary evidence.
+#
+# Grading criteria (also documented in SCHEMA.md):
+#   oracle  — correctness oracle strength
+#     strong  ● : multi-shape/multi-seed/edge-case or held-out hidden tests,
+#                 tight dtype-aware tolerance (<=1e-4) and/or fwd+bwd checks
+#     partial ◐ : meaningful hardening beyond single random inputs
+#     weak    ○ : few random inputs at fixed shapes with loose tolerance
+#   timing  — timing-methodology rigor
+#     strong  ● : clock control + cache-state control + distribution statistics
+#     partial ◐ : cache control or adaptive sampling, but no clock locking
+#     weak    ○ : bare event timing with fixed repetitions, no environment control
+#   budget  — cost/attempts reporting
+#     strong  ● : multi-axis budget (sequential vs parallel, wall-clock, tokens)
+#     partial ◐ : pass@k or a single fixed budget point
+#     none    — : best-result-only reporting
+#   baseline — free text: what the speedup/score denominator is
+#   use_when — one-line "pick this benchmark if ..."
+#   evidence — primary source the grades are derived from
+
+scorecard:
+  kernelbench:
+    oracle: weak        # allclose atol=rtol=1e-2 fp32, fixed shapes, randn-only, fwd-only; code default 1 trial
+    timing: weak        # no clock lock; v0 no L2 control; mean of trials; stream-exploitable (METR: 17 solutions)
+    baseline: "PyTorch eager (torch.compile default-mode as secondary)"
+    budget: none
+    use_when: "You need comparability with the de-facto standard everyone reports — never as sole evidence."
+    evidence: https://github.com/ScalingIntelligence/KernelBench
+
+  robust-kbench:
+    oracle: strong      # 6 filter checks, multi-init/multi-input, forward+backward, atol/rtol 1e-5
+    timing: partial     # hardened harness, multiple timing modes; no clock-lock requirement
+    baseline: "PyTorch eager (KernelBench-style)"
+    budget: none
+    use_when: "You want to prove your speedups survive anti-gaming filters (the KernelBench exploit fixes)."
+    evidence: https://arxiv.org/abs/2509.14279
+
+  backendbench:
+    oracle: strong      # PyTorch OpInfo edge cases (~13/op) + ~110 production-trace shapes/op from TorchBench
+    timing: weak        # correctness-first; minimal performance protocol
+    baseline: "PyTorch op semantics (correctness-first; kernels run as a pip backend)"
+    budget: none
+    use_when: "You want production-shape correctness and a path to actually shipping kernels as a backend."
+    evidence: https://github.com/meta-pytorch/BackendBench
+
+  sol-execbench:
+    oracle: partial     # per-op probed tolerances, static checks, sandboxed execution
+    timing: strong      # locked clocks (1500 MHz), L2 clearing, sandboxed harness
+    baseline: "agent-optimized PyTorch baseline + analytical speed-of-light ceiling (datasheet peak)"
+    budget: none
+    use_when: "You want an absolute (ceiling-relative) score on production LLM kernels — datasheet-ceiling caveat applies."
+    evidence: https://arxiv.org/abs/2603.19173
+
+  cudabench:
+    oracle: unknown     # correctness procedure not yet verified from primary sources
+    timing: partial     # achieved FLOPs / arithmetic intensity are ncu-MEASURED; environment control undocumented
+    baseline: "attainable-GFLOPs roofline ceiling (datasheet peak)"
+    budget: unknown
+    use_when: "You want a roofline-relative Performance-Score with profiler-measured intensity (datasheet-ceiling caveat)."
+    evidence: https://arxiv.org/abs/2603.02236
+
+  iso-bench:
+    oracle: partial     # accuracy-preservation checks + quadrant/lucky-win attribution via LLM judge
+    timing: partial     # 5% noise margin; single-run; fixed 120-min wall-clock cap
+    baseline: "unoptimized baseline + human-merged-PR solution (dual reference)"
+    budget: partial     # one fixed budget point (120 min)
+    use_when: "You want real serving-stack tasks (vLLM/SGLang merged PRs) with did-it-fix-the-bottleneck attribution."
+    evidence: https://arxiv.org/abs/2602.19594
+
+  geak:
+    oracle: partial     # tolerance-based tensor comparison with fixed seeds (replaced string compare)
+    timing: weak        # median over unit tests; no documented clock/cache control
+    baseline: "expert reference kernels (TritonBench-revised + ROCm set)"
+    budget: strong      # the only benchmark decomposing sequential@k vs parallel@k scaling
+    use_when: "You target ROCm/Triton and want budget-decomposed (sequential vs parallel) reporting."
+    evidence: https://arxiv.org/abs/2507.23194
+
+  tritonbench:
+    oracle: partial     # call + execution accuracy vs torch reference; real GitHub operators
+    timing: partial     # triton do_bench adaptive warmup/repeat-until-stable
+    baseline: "PyTorch/reference impl; descriptive GPU-efficiency vs A100 theoretical peak"
+    budget: none        # zero/one-shot only
+    use_when: "You generate Triton specifically and want real-world (GitHub-sourced) operators."
+    evidence: https://arxiv.org/abs/2502.14752
+
+  multikernelbench:
+    oracle: weak        # inherits KernelBench's check verbatim: N=5 random inputs, atol=rtol=1e-2
+    timing: weak        # inherits KernelBench timing
+    baseline: "each platform's own PyTorch backend"
+    budget: partial     # pass@k and speedup@k
+    use_when: "You need multi-platform coverage (CUDA / Ascend C / TPU Pallas) and accept per-platform-only numbers."
+    evidence: https://arxiv.org/abs/2507.17773
+
+  computeeval:
+    oracle: strong      # held-out hidden test harness the model never sees; sandboxed build+run
+    timing: weak        # performance is optional, separate benchmark_command
+    baseline: "n/a (correctness-first; optional speedup vs reference)"
+    budget: partial     # pass@k
+    use_when: "You want CUDA correctness with anti-overfitting (hidden tests) from NVIDIA's own harness."
+    evidence: https://github.com/NVIDIA/compute-eval
+
+  kernelbench-v3:
+    oracle: partial     # tolerance tightened to 1e-4; same single-frame conceptual design
+    timing: partial     # warmup 32, 128 profiling iters; still no clock locking
+    baseline: "PyTorch eager (reference.py)"
+    budget: none
+    use_when: "You want a community-hardened KernelBench variant reported across several GPUs."
+    evidence: https://github.com/Infatoshi/KernelBench-v3

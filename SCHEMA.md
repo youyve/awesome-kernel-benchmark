@@ -68,6 +68,21 @@ Assignments follow the suite's own paper where it self-classifies (OpenDwarfs, R
 ### Badges in generated tables
 `✅` yes · `◐` partial · `—` no/none — for both **Verify** (correctness oracle) and **Ships** (re-runnable kernels).
 
+## Methodology scorecard (`data/scorecard.yaml`)
+
+A second data file grades **Layer-1 agent benchmarks only** on the methodology choices that separate trustworthy numbers from inflated ones. A row may exist **only** when the grader actually read primary evidence (harness source / paper) — README self-claims are never accepted. Keyed by the entry `id`.
+
+| Field | Type | Meaning |
+|:---|:---|:---|
+| `oracle` | enum | correctness-oracle strength: `strong` ● (multi-shape/seed/edge-case or held-out tests, ≤1e-4 dtype-aware tolerance and/or fwd+bwd) · `partial` ◐ (meaningful hardening) · `weak` ○ (few random inputs, fixed shapes, loose tolerance) · `unknown` ? |
+| `timing` | enum | timing rigor: `strong` ● (clock control + cache control + distribution stats) · `partial` ◐ (cache control or adaptive sampling, no clock lock) · `weak` ○ (bare event timing, fixed reps) · `unknown` ? |
+| `budget` | enum | cost reporting: `strong` ● (multi-axis, sequential vs parallel) · `partial` ◐ (pass@k or one fixed budget point) · `none` — · `unknown` ? |
+| `baseline` | string | what the speedup/score denominator actually is |
+| `use_when` | string | one-line "pick this benchmark if …" |
+| `evidence` | url | the primary source the grades are derived from |
+
+Grading a new benchmark (with evidence links) is the most valuable PR this repository accepts.
+
 ## Validation
 
 ```bash
