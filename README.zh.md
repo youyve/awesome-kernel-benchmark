@@ -469,4 +469,4 @@ Ascend, Cambricon, Tenstorrent, IPU substrates — where vendor-kernel scarcity 
 
 ## 相关列表 · 贡献 · 许可
 
-见英文版对应章节：[Related lists](README.md#related-lists) · [Contributing](README.md#contributing)（**最有价值的 PR**：读一个 harness 的源码，按标准给它评级并附证据）· Apache-2.0。
+见英文版对应章节：[Related lists](README.md#related-lists) · [Contributing](README.md#contributing)（**最有价值的 PR**：读一个 harness 的源码，按标准给它评级并附证据）。许可：目录内容 [CC-BY-4.0](LICENSE)（要求署名），`scripts/` 代码 [MIT](scripts/LICENSE)，每个被收录 benchmark 保留其自身协议。

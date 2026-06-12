@@ -483,4 +483,4 @@ If this catalog or its methodology scorecard is useful in your research, please 
 
 ## License
 
-Apache-2.0 for the catalog; each benchmark retains its own license (see per-entry `license` field).
+Catalog content: [CC-BY-4.0](LICENSE) (attribution required) · code in [`scripts/`](scripts/LICENSE): MIT · each listed benchmark retains its own license (per-entry `license` field).
