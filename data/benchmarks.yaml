@@ -245,7 +245,7 @@ benchmarks:
     code: https://github.com/zhang677/AccelOpt
     paper: https://arxiv.org/abs/2511.15915
     status: active
-    notes: "Real-workload AWS Trainium NKI kernels; ships with the AccelOpt self-improving agent (MLSys'26)."
+    notes: "Real-workload AWS Trainium NKI kernels; ships with the AccelOpt self-improving agent (MLSys'26 Oral, v2 2026-04)."
 
   - id: npukernelbench
     name: NPUKernelBench
@@ -448,6 +448,103 @@ benchmarks:
     paper: https://arxiv.org/abs/2512.23424
     status: active
     notes: "~198/214-operator LLM kernel-gen evaluation platform bundled with AKG-AGENT."
+
+  - id: atrex-bench
+    name: Atrex-Bench
+    year: "2026"
+    org: Alibaba
+    layer: agent-benchmark
+    abstraction: operator
+    family: agent-benchmark
+    motifs: [attention, reduction-scan, elementwise, mixed]
+    measures: [correctness, performance]
+    bottleneck: mixed
+    programming_models: [Triton, Gluon, FlyDSL, CuteDSL]
+    hardware: [NVIDIA, AMD]
+    verify: yes
+    ships_kernels: no
+    code: https://github.com/alibaba/atrex-bench
+    license: "Apache-2.0"
+    status: active
+    notes: "30 production operators (attention_forward, mla_decode_attention, paged_attention_decode, rms_norm, fused_moe, fp8_dynamic_per_token_quant, etc.), 440 hot shapes / 1.3k prod. profiles derived from vLLM/SGLang/AITER/rtp-llm traces. Three-stage evaluator (compile, correctness, performance-vs-roofline SOL, weighted by production frequency x time share) runs identically on NVIDIA (CUDA) and AMD (ROCm) via prebuilt Docker images. Leak-resistant harness strips provenance/roofline data before the agent sees the checkout; generated kernels are written to a user-local --output-dir, not committed to the repo. First entry in this catalog targeting Gluon or FlyDSL. No paper/citation found (very new, created 2026-06)."
+
+  - id: fastkernels
+    name: FastKernels
+    full_name: "FastKernels: Benchmarking GPU Kernel Generation in Production"
+    year: "2026"
+    org: Snowflake AI Research
+    layer: agent-benchmark
+    abstraction: kernel
+    family: agent-benchmark
+    motifs: [mixed]
+    measures: [correctness, performance]
+    bottleneck: mixed
+    hardware: [NVIDIA]
+    verify: yes
+    ships_kernels: yes
+    code: https://github.com/Snowflake-AI-Research/fastkernels
+    paper: https://arxiv.org/abs/2605.23215
+    status: active
+    notes: "46 architectures / 8 categories subsuming 96.2% (409/425) of HuggingFace Transformers archs; tests agent kernels as drop-in replacements against production vLLM/SGLang, addressing benchmark-production misalignment. Best agent reached only 0.94x aggregate speedup over production baselines (others 0.78x, 0.53x)."
+
+  - id: cass-bench
+    name: CASS-Bench
+    full_name: "CASS: Nvidia to AMD Transpilation with Data, Models, and Benchmark"
+    year: "2025"
+    org: MBZUAI / Australian National University
+    layer: agent-benchmark
+    abstraction: kernel
+    family: agent-benchmark
+    motifs: [mixed]
+    measures: [correctness, performance]
+    bottleneck: n/a
+    languages: [CUDA, HIP]
+    hardware: [NVIDIA, AMD]
+    verify: yes
+    ships_kernels: partial
+    code: https://github.com/ahmedheakl/CASS
+    paper: https://arxiv.org/abs/2505.16968
+    status: active
+    notes: "First cross-architecture GPU transpilation benchmark: CUDA<->HIP at source level, SASS<->RDNA3 at assembly level, with ground-truth execution; accepted to ACL 2026. Domain-count phrasing is inconsistent across sources (project/repo page says 16 GPU domains, arXiv abstract says 18) - flagged rather than picked; evaluation scripts still a listed TODO in the repo. Fills a real gap: no other entry in this catalog covers CUDA<->HIP transpilation."
+
+  - id: parallelkernelbench
+    name: ParallelKernelBench
+    full_name: "ParallelKernelBench: Frontier LLMs can't write fast multi-GPU kernels (yet)"
+    year: "2026"
+    org: Together AI
+    layer: agent-benchmark
+    abstraction: kernel
+    family: agent-benchmark
+    motifs: [mixed, data-movement]
+    measures: [correctness, performance]
+    bottleneck: communication
+    programming_models: [CUDA, Triton]
+    hardware: [NVIDIA]
+    verify: yes
+    ships_kernels: yes
+    code: https://github.com/togethercomputer/ParallelKernelBench
+    paper: https://www.together.ai/blog/parallelkernelbench
+    license: Apache-2.0
+    status: active
+    notes: "87 problems requiring replacement of PyTorch+NCCL with direct multi-GPU/NVLink CUDA/Triton kernels, sourced from Megatron-LM, DeepSpeed, DeepEP, TensorRT-LLM, NeMo-RL plus non-LLM workloads; best frontier model (GPT-5.5, 3-sample) solved 36/87 with fast1@3 topping out at 31%. Blog-only release, no standalone arXiv paper found. Fills a real gap: no other entry in this catalog specifically targets multi-GPU communication+compute kernel generation."
+
+  - id: kernelarena-wafer
+    name: Kernel Arena
+    year: "2026"
+    org: Wafer (YC S25)
+    layer: agent-benchmark
+    abstraction: kernel
+    family: agent-benchmark
+    motifs: [mixed]
+    measures: [correctness, performance]
+    programming_models: [CUDA, HIP]
+    hardware: [NVIDIA, AMD]
+    verify: yes
+    ships_kernels: no
+    code: https://github.com/wafer-ai/kernel-arena
+    license: unknown
+    status: active
+    notes: "Public leaderboard (kernelarena.ai) for LLM-generated accelerator kernels, unrelated to AMD's AgentKernelArena despite the similar name - different org, different scope, confirmed not a duplicate/misattribution. Two suites: WaferBench NVFP4 (NVIDIA B200/CUDA 12.8, 6 fused NVFP4 inference kernels vs GPT-5.4/Claude-4.6-Opus/Composer-1.5/Gemini-3.1-Pro, reference FlashInfer 0.2.6.post1) and KernelBench HIP (AMD MI300X/ROCm 7.0, 41 kernels x 4 difficulty levels, 11 models, torch.allclose validation). Also maintains a public 'Reward Hacking Catalog.' GitHub repo is a thin results/leaderboard companion (1 commit, no license file) - the harness itself likely lives on kernelarena.ai."
 
   # ======================================================================
   # LAYER 2 — Substrate suites :: Polyhedral & loop-nest
@@ -1646,6 +1743,26 @@ benchmarks:
     license: "Apache-2.0-LLVM"
     status: active
     notes: "Linalg/Affine codegen integration-test microkernels; the infra beneath IREE and AKG-MLIR."
+
+  - id: tirx-kernels
+    name: TIRx Kernels
+    year: "2026"
+    org: mlc-ai
+    layer: substrate-suite
+    abstraction: kernel
+    family: tensor-compiler
+    motifs: [dense-LA, attention, mixed]
+    measures: [correctness, performance]
+    bottleneck: mixed
+    languages: [TIRx]
+    hardware: [NVIDIA]
+    precision: [FP16, BF16, FP8, FP4, TF32]
+    verify: yes
+    ships_kernels: yes
+    code: https://github.com/mlc-ai/tirx-kernels
+    license: "Apache-2.0"
+    status: active
+    notes: "Small (7-kernel) reference-kernel regression suite for the TIRx compiler (TVM lineage), targeting sm_100a (Blackwell-class NVIDIA): fp16/bf16 gemm, fp8 blockwise gemm, nvfp4 gemm, flash_attention4, and three DeepGEMM sm100 variants. Ships correctness tests + benchmarking + pre-commit regression sweep; uses deep_gemm/flashinfer as baselines for some kernels. A compiler-backend reference suite rather than an agent-evaluation harness, but a kernel agent could plausibly be tasked with reproducing/beating these reference kernels. Very new (created 2026-06, 5 commits, no releases); no paper found."
 
   # ======================================================================
   # LAYER 2 — Substrate suites :: Sparse linear algebra & tensors

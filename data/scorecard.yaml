@@ -109,3 +109,35 @@ scorecard:
     budget: none
     use_when: "You want a community-hardened KernelBench variant reported across several GPUs."
     evidence: https://github.com/Infatoshi/KernelBench-v3
+
+  atrex-bench:
+    oracle: partial     # hidden metadata.json/roofline.json never staged to agent (held-out-like design), 440 shapes; exact tolerance/seed count not confirmed from primary source
+    timing: partial     # roofline-relative T_candidate vs T_roofline score per (op,shape); clock-lock/cache-control specifics not confirmed
+    baseline: "hardware roofline Speed-of-Light bound (analytical, weighted by production frequency x time share)"
+    budget: unknown     # no attempts/iteration budget disclosure found
+    use_when: "You want a production-trace-weighted, multi-vendor (NVIDIA+AMD), multi-DSL (Triton/Gluon/FlyDSL/CuteDSL) benchmark with an explicit anti-leakage harness design."
+    evidence: https://github.com/alibaba/atrex-bench
+
+  fastkernels:
+    oracle: unknown     # correctness measure confirmed, exact tolerance/edge-case procedure not confirmed from primary source
+    timing: partial     # measured as aggregate speedup inside actual production vLLM/SGLang serving stacks - realistic but no confirmed low-level environment control
+    baseline: "production vLLM/SGLang serving baselines (drop-in replacement test)"
+    budget: unknown
+    use_when: "You want to know if kernel-gen results actually hold up as production-serving drop-in replacements, not just isolated benchmark scores."
+    evidence: https://arxiv.org/abs/2605.23215
+
+  cass-bench:
+    oracle: partial     # ground-truth execution-based validation; multi-seed/tolerance specifics not confirmed
+    timing: unknown     # timing methodology not confirmed from primary source
+    baseline: "ground-truth CUDA/HIP execution correctness + performance"
+    budget: unknown
+    use_when: "You want a benchmark specifically for cross-architecture (CUDA<->HIP source, SASS<->RDNA3 assembly) GPU code transpilation, not fresh kernel generation."
+    evidence: https://arxiv.org/abs/2505.16968
+
+  parallelkernelbench:
+    oracle: partial     # real multi-GPU correctness checking against PyTorch+NCCL reference; exact tolerance/seed count not confirmed
+    timing: unknown     # timing-environment control not confirmed from primary source
+    baseline: "PyTorch+NCCL reference implementation; frontier models measured at a 3-sample budget (fast1@3)"
+    budget: partial     # fast1@3 is an explicitly disclosed fixed budget point
+    use_when: "You want the only benchmark specifically testing multi-GPU/NVLink communication+compute kernel generation (not single-GPU kernels)."
+    evidence: https://www.together.ai/blog/parallelkernelbench
